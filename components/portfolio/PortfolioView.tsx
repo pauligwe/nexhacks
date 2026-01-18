@@ -135,20 +135,21 @@ export function PortfolioView({
 
       {/* Sector Breakdown & Top Holdings */}
       <div className="grid grid-cols-2 gap-6 mb-6">
-        {/* Sector Breakdown - Pie Chart Only */}
+        {/* Sector Breakdown - Centered Pie Chart */}
         {Object.keys(sectorBreakdown).length > 0 && (
           <div className="bg-[#1c2026] border border-[#2d3139] p-6">
-            <h3 className="font-semibold mb-4">Sector Breakdown</h3>
-            <div className="flex items-center gap-6">
-              <div className="w-48 h-48 shrink-0">
+            <h3 className="font-semibold mb-2">Sector Breakdown</h3>
+            {/* Centered Pie Chart */}
+            <div className="flex justify-center">
+              <div className="w-56 h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={40}
-                      outerRadius={70}
+                      innerRadius={50}
+                      outerRadius={90}
                       paddingAngle={2}
                       dataKey="value"
                     >
@@ -174,20 +175,19 @@ export function PortfolioView({
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex-1 space-y-2">
-                {pieData.map((sector) => (
-                  <div key={sector.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 shrink-0" 
-                        style={{ backgroundColor: sector.color }}
-                      />
-                      <span className="text-sm">{sector.name}</span>
-                    </div>
-                    <span className="text-sm mono text-[#858687]">{sector.percentage.toFixed(1)}%</span>
-                  </div>
-                ))}
-              </div>
+            </div>
+            {/* Legend at bottom with smaller text */}
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3">
+              {pieData.map((sector) => (
+                <div key={sector.name} className="flex items-center gap-1.5">
+                  <div 
+                    className="w-2 h-2 shrink-0" 
+                    style={{ backgroundColor: sector.color }}
+                  />
+                  <span className="text-xs text-[#858687]">{sector.name}</span>
+                  <span className="text-xs mono text-[#585858]">{sector.percentage.toFixed(0)}%</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
