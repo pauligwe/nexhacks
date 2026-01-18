@@ -56,7 +56,7 @@ IMPORTANT:
 
 async function fetchYahooFinanceNews(tickers: string[]): Promise<any[]> {
   const allNews: any[] = [];
-  
+
   // Fetch news for each ticker using Yahoo Finance's public API
   for (const ticker of tickers) {
     try {
@@ -65,31 +65,39 @@ async function fetchYahooFinanceNews(tickers: string[]): Promise<any[]> {
         `https://query1.finance.yahoo.com/v1/finance/search?q=${ticker}&quotesCount=1&newsCount=5`,
         {
           headers: {
-            'User-Agent': 'Mozilla/5.0',
+            "User-Agent": "Mozilla/5.0",
           },
-        }
+        },
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.news && Array.isArray(data.news)) {
-        allNews.push(...data.news.map((item: any) => ({
-          title: item.title,
-          summary: item.summary || item.description || item.excerpt || item.snippet || item.text || '',
-          link: item.link,
-          url: item.link,
-          providerPublishTime: item.providerPublishTime,
-          pubDate: item.providerPublishTime,
-          publisher: item.publisher || item.source,
-          source: item.publisher || item.source,
-          uuid: item.uuid,
-          relatedTicker: ticker,
-          rawData: item, // Keep raw data for debugging
-        })));
+        allNews.push(
+          ...data.news.map((item: any) => ({
+            title: item.title,
+            summary:
+              item.summary ||
+              item.description ||
+              item.excerpt ||
+              item.snippet ||
+              item.text ||
+              "",
+            link: item.link,
+            url: item.link,
+            providerPublishTime: item.providerPublishTime,
+            pubDate: item.providerPublishTime,
+            publisher: item.publisher || item.source,
+            source: item.publisher || item.source,
+            uuid: item.uuid,
+            relatedTicker: ticker,
+            rawData: item, // Keep raw data for debugging
+          })),
+        );
       }
     } catch (error) {
       console.error(`Error fetching news for ${ticker}:`, error);
@@ -99,11 +107,11 @@ async function fetchYahooFinanceNews(tickers: string[]): Promise<any[]> {
           `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${ticker}&region=US&lang=en-US`,
           {
             headers: {
-              'User-Agent': 'Mozilla/5.0',
+              "User-Agent": "Mozilla/5.0",
             },
-          }
+          },
         );
-        
+
         if (altResponse.ok) {
           const text = await altResponse.text();
           // Parse RSS (simplified - you might want to use an RSS parser)
@@ -114,10 +122,10 @@ async function fetchYahooFinanceNews(tickers: string[]): Promise<any[]> {
       }
     }
   }
-  
+
   // Deduplicate by URL
   const seen = new Set<string>();
-  return allNews.filter(item => {
+  return allNews.filter((item) => {
     const url = item.link || item.url;
     if (!url || seen.has(url)) return false;
     seen.add(url);
@@ -128,10 +136,10 @@ async function fetchYahooFinanceNews(tickers: string[]): Promise<any[]> {
 async function fetchNewsViaGroqSearch(
   tickers: string[],
   portfolioContext: string,
-  apiKey: string
+  apiKey: string,
 ): Promise<any[]> {
   // Use Groq to find real news articles with proper search URLs
-  const searchPrompt = `Find 10-15 recent, real news articles about these stocks: ${tickers.join(', ')}.
+  const searchPrompt = `Find 10-15 recent, real news articles about these stocks: ${tickers.join(", ")}.
 
 For each article, provide:
 - A real, current article title
@@ -160,7 +168,7 @@ IMPORTANT: Use real, current news. Create search URLs that will find actual arti
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model,
@@ -204,24 +212,39 @@ IMPORTANT: Use real, current news. Create search URLs that will find actual arti
 async function enhanceNewsWithGroq(
   articles: any[],
   portfolioContext: string,
-  apiKey: string
-): Promise<Array<{ relevance: string; relatedStocks: string[]; keyPoints: string[]; isRelevant: boolean }>> {
+  apiKey: string,
+): Promise<
+  Array<{
+    relevance: string;
+    relatedStocks: string[];
+    keyPoints: string[];
+    isRelevant: boolean;
+  }>
+> {
   if (articles.length === 0) return [];
 
-  const articlesContext = articles.map((article, idx) => {
-    const summary = article.summary || article.description || article.excerpt || article.snippet || article.text || '';
-    return `${idx + 1}. "${article.title}"${summary ? ` - ${summary}` : ''}`;
-  }).join('\n\n');
+  const articlesContext = articles
+    .map((article, idx) => {
+      const summary =
+        article.summary ||
+        article.description ||
+        article.excerpt ||
+        article.snippet ||
+        article.text ||
+        "";
+      return `${idx + 1}. "${article.title}"${summary ? ` - ${summary}` : ""}`;
+    })
+    .join("\n\n");
 
   for (const model of GROQ_MODELS) {
     try {
       console.log(`Enhancing news with model: ${model}`);
-      
+
       const response = await fetch(GROQ_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model,
@@ -244,12 +267,16 @@ async function enhanceNewsWithGroq(
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Groq API error for ${model}:`, response.status, errorText);
-        
+        console.error(
+          `Groq API error for ${model}:`,
+          response.status,
+          errorText,
+        );
+
         if (response.status === 400 || response.status === 404) {
           continue;
         }
-        
+
         throw new Error(`Groq API error: ${response.status}`);
       }
 
@@ -262,7 +289,7 @@ async function enhanceNewsWithGroq(
 
       // Extract JSON from response - try multiple strategies
       let jsonMatch = content.match(/\[[\s\S]*\]/);
-      
+
       // If no array found, try to find JSON object and wrap it
       if (!jsonMatch) {
         const objMatch = content.match(/\{[\s\S]*\}/);
@@ -270,47 +297,81 @@ async function enhanceNewsWithGroq(
           jsonMatch = [`[${objMatch[0]}]`];
         }
       }
-      
+
       if (!jsonMatch) {
         throw new Error("Could not parse JSON array from Groq response");
       }
 
       let jsonString = jsonMatch[0];
-      
-      // Try to fix common JSON issues
-      // Remove trailing commas before closing brackets/braces (more careful)
-      jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
-      
+
+      // Try to fix common JSON issues from LLMs
+      const fixJson = (str: string): string => {
+        // Remove trailing commas before closing brackets/braces
+        str = str.replace(/,(\s*[}\]])/g, "$1");
+        // Fix unescaped quotes in strings (common LLM mistake)
+        str = str.replace(
+          /: "([^"]*)"([^,}\]]*)"([^"]*)",/g,
+          ': "$1\\"$2\\"$3",',
+        );
+        // Remove control characters
+        str = str.replace(/[\x00-\x1F\x7F]/g, " ");
+        // Fix missing commas between array elements
+        str = str.replace(/\}(\s*)\{/g, "},$1{");
+        return str;
+      };
+
       let enhancements;
       try {
-        enhancements = JSON.parse(jsonString);
+        enhancements = JSON.parse(fixJson(jsonString));
       } catch (parseError) {
         // Try to extract just the array part more carefully
-        const arrayStart = jsonString.indexOf('[');
-        const arrayEnd = jsonString.lastIndexOf(']');
+        const arrayStart = jsonString.indexOf("[");
+        const arrayEnd = jsonString.lastIndexOf("]");
         if (arrayStart >= 0 && arrayEnd > arrayStart) {
           let extractedJson = jsonString.substring(arrayStart, arrayEnd + 1);
-          // Try fixing trailing commas again on extracted portion
-          extractedJson = extractedJson.replace(/,(\s*[}\]])/g, '$1');
           try {
-            enhancements = JSON.parse(extractedJson);
+            enhancements = JSON.parse(fixJson(extractedJson));
           } catch (e) {
-            // Last resort: try to parse each object individually if it's an array
-            console.warn(`Failed to parse JSON array, attempting fallback parsing for model ${model}`);
-            throw parseError;
+            // Try object-by-object parsing as last resort
+            try {
+              const objectMatches = extractedJson.match(/\{[^{}]*\}/g);
+              if (objectMatches && objectMatches.length > 0) {
+                enhancements = objectMatches.map((obj: string) => {
+                  try {
+                    return JSON.parse(fixJson(obj));
+                  } catch {
+                    return {
+                      relevance: "Unable to parse",
+                      relatedStocks: [],
+                      keyPoints: [],
+                      isRelevant: true,
+                    };
+                  }
+                });
+              } else {
+                throw parseError;
+              }
+            } catch {
+              console.warn(
+                `Failed to parse JSON array for model ${model}, using fallback`,
+              );
+              throw parseError;
+            }
           }
         } else {
           throw parseError;
         }
       }
-      
+
       // Validate it's an array
       if (!Array.isArray(enhancements)) {
         throw new Error("Groq response is not a JSON array");
       }
-      
-      console.log(`Successfully enhanced ${enhancements.length} articles with model: ${model}`);
-      
+
+      console.log(
+        `Successfully enhanced ${enhancements.length} articles with model: ${model}`,
+      );
+
       return enhancements;
     } catch (error) {
       console.error(`Error with model ${model}:`, error);
@@ -320,7 +381,7 @@ async function enhanceNewsWithGroq(
 
   // Fallback: return basic enhancements
   return articles.map((article) => ({
-    relevance: `News about ${article.relatedTicker || 'the market'}`,
+    relevance: `News about ${article.relatedTicker || "the market"}`,
     relatedStocks: article.relatedTicker ? [article.relatedTicker] : [],
     keyPoints: [],
     isRelevant: true, // Default to true for fallback
@@ -336,16 +397,19 @@ export async function POST(request: NextRequest) {
     if (!portfolio || !Array.isArray(portfolio) || portfolio.length === 0) {
       return NextResponse.json(
         { error: "Portfolio is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const groqApiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY || "";
+    const groqApiKey =
+      process.env.GROQ_API_KEY || process.env.GROK_API_KEY || "";
 
     if (!groqApiKey) {
       return NextResponse.json(
-        { error: "Groq API key not configured. Add GROQ_API_KEY to .env.local" },
-        { status: 500 }
+        {
+          error: "Groq API key not configured. Add GROQ_API_KEY to .env.local",
+        },
+        { status: 500 },
       );
     }
 
@@ -369,7 +433,7 @@ export async function POST(request: NextRequest) {
     const portfolioContext = portfolioWithData
       .map(
         (p) =>
-          `- ${p.ticker} (${p.name}): ${p.shares} shares, ${p.sector} sector, ${p.industry} industry`
+          `- ${p.ticker} (${p.name}): ${p.shares} shares, ${p.sector} sector, ${p.industry} industry`,
       )
       .join("\n");
 
@@ -382,14 +446,16 @@ export async function POST(request: NextRequest) {
 
     // Fetch real news from Yahoo Finance
     let yahooNews = await fetchYahooFinanceNews(tickers);
-    
+
     // If no news found, try a fallback approach
     if (yahooNews.length === 0) {
-      console.log("Yahoo Finance API returned no news, trying alternative approach...");
+      console.log(
+        "Yahoo Finance API returned no news, trying alternative approach...",
+      );
       // Fallback: Use Groq to find real news articles with search URLs
       yahooNews = await fetchNewsViaGroqSearch(tickers, context, groqApiKey);
     }
-    
+
     // Limit to most recent 15 articles
     const recentNews = yahooNews
       .sort((a, b) => {
@@ -400,14 +466,19 @@ export async function POST(request: NextRequest) {
       .slice(0, 15);
 
     // Enhance with Groq for relevance
-    let enhancements: Array<{ relevance: string; relatedStocks: string[]; keyPoints: string[]; isRelevant: boolean }> = [];
+    let enhancements: Array<{
+      relevance: string;
+      relatedStocks: string[];
+      keyPoints: string[];
+      isRelevant: boolean;
+    }> = [];
     try {
       enhancements = await enhanceNewsWithGroq(recentNews, context, groqApiKey);
     } catch (error) {
       console.error("Error enhancing news:", error);
       // Use fallback enhancements
       enhancements = recentNews.map((article) => ({
-        relevance: `Recent news about ${article.relatedTicker || 'the market'}`,
+        relevance: `Recent news about ${article.relatedTicker || "the market"}`,
         relatedStocks: article.relatedTicker ? [article.relatedTicker] : [],
         keyPoints: [],
         isRelevant: true, // Default to true for fallback
@@ -417,32 +488,33 @@ export async function POST(request: NextRequest) {
     // Combine real news with enhancements and filter out irrelevant articles
     let articles: NewsArticle[] = recentNews
       .map((article, idx) => {
-        const enhancement = enhancements[idx] || enhancements[0] || {
-          relevance: "Financial news article",
-          relatedStocks: article.relatedTicker ? [article.relatedTicker] : [],
-          keyPoints: [],
-          isRelevant: true,
-        };
+        const enhancement = enhancements[idx] ||
+          enhancements[0] || {
+            relevance: "Financial news article",
+            relatedStocks: article.relatedTicker ? [article.relatedTicker] : [],
+            keyPoints: [],
+            isRelevant: true,
+          };
 
         // Check if article is marked as relevant
         // Only filter if explicitly marked as false, otherwise include it
         const isRelevant = enhancement.isRelevant !== false; // Default to true if not specified
-        
+
         // Only filter based on explicit "not really relevant" or "not relevant" phrases
         // Don't filter on weaker indicators like "maybe" or "possibly" as those might still be useful
-        const relevanceText = (enhancement.relevance || '').toLowerCase();
+        const relevanceText = (enhancement.relevance || "").toLowerCase();
         const strongNegativeIndicators = [
-          'not really relevant',
-          'not relevant',
-          'not particularly relevant',
-          'not especially relevant',
-          'not directly relevant',
-          'no clear connection',
-          'unrelated',
+          "not really relevant",
+          "not relevant",
+          "not particularly relevant",
+          "not especially relevant",
+          "not directly relevant",
+          "no clear connection",
+          "unrelated",
         ];
-        
-        const hasStrongNegative = strongNegativeIndicators.some(indicator => 
-          relevanceText.includes(indicator)
+
+        const hasStrongNegative = strongNegativeIndicators.some((indicator) =>
+          relevanceText.includes(indicator),
         );
 
         return {
@@ -456,80 +528,104 @@ export async function POST(request: NextRequest) {
         // Format date - Yahoo Finance uses Unix timestamp (seconds or milliseconds)
         let publishTime: number;
         if (article.providerPublishTime) {
-          publishTime = article.providerPublishTime > 1e12 
-            ? article.providerPublishTime / 1000  // milliseconds to seconds
-            : article.providerPublishTime;
+          publishTime =
+            article.providerPublishTime > 1e12
+              ? article.providerPublishTime / 1000 // milliseconds to seconds
+              : article.providerPublishTime;
         } else if (article.pubDate) {
-          publishTime = article.pubDate > 1e12 
-            ? article.pubDate / 1000 
-            : article.pubDate;
+          publishTime =
+            article.pubDate > 1e12 ? article.pubDate / 1000 : article.pubDate;
         } else {
           publishTime = Date.now() / 1000; // Current time in seconds
         }
-        
+
         const publishDate = new Date(publishTime * 1000);
-        const formattedDate = publishDate.toISOString().split('T')[0];
+        const formattedDate = publishDate.toISOString().split("T")[0];
 
         // Get URL - Yahoo Finance articles can have various URL fields
         let articleUrl = article.link || article.url || article.canonicalUrl;
-        
+
         // If no URL found, try to construct one from UUID or use a search URL
         if (!articleUrl) {
           if (article.uuid) {
             articleUrl = `https://finance.yahoo.com/news/${article.uuid}`;
           } else {
             // Fallback: create a search URL for the article title
-            const searchQuery = encodeURIComponent(article.title || '');
+            const searchQuery = encodeURIComponent(article.title || "");
             articleUrl = `https://finance.yahoo.com/news?q=${searchQuery}`;
           }
         }
-        
+
         // Ensure URL is absolute
-        if (articleUrl && !articleUrl.startsWith('http')) {
+        if (articleUrl && !articleUrl.startsWith("http")) {
           articleUrl = `https://${articleUrl}`;
         }
 
         // Extract summary from multiple possible fields
-        let summary = article.summary || article.description || article.excerpt || article.snippet || article.text || '';
-        
+        let summary =
+          article.summary ||
+          article.description ||
+          article.excerpt ||
+          article.snippet ||
+          article.text ||
+          "";
+
         // If no summary, use title as a fallback summary
-        if (!summary || summary.trim() === '') {
-          summary = article.title 
+        if (!summary || summary.trim() === "") {
+          summary = article.title
             ? `News article about ${article.title.toLowerCase()}. Click to read more.`
-            : 'Financial news article. Click to read more.';
+            : "Financial news article. Click to read more.";
         }
 
         return {
           title: article.title || "Untitled Article",
           summary: summary,
-          source: article.publisher || article.source || article.provider?.name || "Yahoo Finance",
+          source:
+            article.publisher ||
+            article.source ||
+            article.provider?.name ||
+            "Yahoo Finance",
           url: articleUrl,
           publishedAt: formattedDate,
           relevance: enhancement.relevance,
-          relatedStocks: enhancement.relatedStocks.length > 0 
-            ? enhancement.relatedStocks 
-            : (article.relatedTicker ? [article.relatedTicker] : []),
+          relatedStocks:
+            enhancement.relatedStocks.length > 0
+              ? enhancement.relatedStocks
+              : article.relatedTicker
+                ? [article.relatedTicker]
+                : [],
         };
       });
 
     // Safety check: if filtering removed all articles, return at least the top 5 most recent
     // This prevents showing no articles when filtering is too aggressive
     if (articles.length === 0 && recentNews.length > 0) {
-      console.warn("All articles were filtered out, returning top 5 most recent articles");
+      console.warn(
+        "All articles were filtered out, returning top 5 most recent articles",
+      );
       articles = recentNews.slice(0, 5).map((article) => {
-        const publishTime = article.providerPublishTime || article.pubDate || Date.now() / 1000;
-        const publishDate = new Date((publishTime > 1e12 ? publishTime / 1000 : publishTime) * 1000);
-        const formattedDate = publishDate.toISOString().split('T')[0];
-        const articleUrl = article.link || article.url || `https://finance.yahoo.com/news/${article.uuid || ''}`;
-        const summary = article.summary || article.description || article.excerpt || '';
-        
+        const publishTime =
+          article.providerPublishTime || article.pubDate || Date.now() / 1000;
+        const publishDate = new Date(
+          (publishTime > 1e12 ? publishTime / 1000 : publishTime) * 1000,
+        );
+        const formattedDate = publishDate.toISOString().split("T")[0];
+        const articleUrl =
+          article.link ||
+          article.url ||
+          `https://finance.yahoo.com/news/${article.uuid || ""}`;
+        const summary =
+          article.summary || article.description || article.excerpt || "";
+
         return {
           title: article.title || "Untitled Article",
-          summary: summary || `News article about ${article.relatedTicker || 'the market'}`,
+          summary:
+            summary ||
+            `News article about ${article.relatedTicker || "the market"}`,
           source: article.publisher || article.source || "Yahoo Finance",
           url: articleUrl,
           publishedAt: formattedDate,
-          relevance: `Recent news about ${article.relatedTicker || 'the market'}`,
+          relevance: `Recent news about ${article.relatedTicker || "the market"}`,
           relatedStocks: article.relatedTicker ? [article.relatedTicker] : [],
         };
       });
@@ -539,8 +635,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("News fetch error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch news" },
-      { status: 500 }
+      {
+        error: error instanceof Error ? error.message : "Failed to fetch news",
+      },
+      { status: 500 },
     );
   }
 }

@@ -7,6 +7,7 @@ import { HedgeView } from "@/components/hedge/HedgeView";
 import { RiskView } from "@/components/risk/RiskView";
 import { NewsView } from "@/components/news/NewsView";
 import { GreeksView } from "@/components/greeks/GreeksView";
+import { IntroPage } from "@/components/IntroPage";
 import type { NewsArticle } from "@/app/api/news/route";
 
 // Shared types - exported for use in other components
@@ -67,25 +68,41 @@ export interface RiskAnalysisResult {
   }>;
   woodWideAnalysis?: {
     enabled: boolean;
+    insights: Array<{
+      type: "anomaly" | "classification" | "pattern" | "risk_profile";
+      title: string;
+      description: string;
+      severity: "info" | "warning" | "critical";
+      details: Record<string, unknown>;
+      recommendation?: string;
+    }>;
+    portfolioClassification?: {
+      profile: "conservative" | "moderate" | "aggressive" | "speculative";
+      confidence: number;
+      similarTo: string[];
+      warnings: string[];
+    };
     anomalies?: Array<{
       ticker: string;
-      anomalyScore: number;
+      score: number;
       isAnomaly: boolean;
       reason?: string;
     }>;
+    riskScore?: number;
     error?: string;
   };
   analysisTimestamp: string;
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabType>("portfolio");
+  const [activeTab, setActiveTab] = useState<TabType>("intro");
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [stockInfo, setStockInfo] = useState<Record<string, StockInfo>>({});
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null,
   );
-  const [riskAnalysisResult, setRiskAnalysisResult] = useState<RiskAnalysisResult | null>(null);
+  const [riskAnalysisResult, setRiskAnalysisResult] =
+    useState<RiskAnalysisResult | null>(null);
   const [selectedBet, setSelectedBet] = useState<HedgeRecommendation | null>(
     null,
   );
@@ -165,7 +182,7 @@ export default function Home() {
             })
             .catch((err) => {
               console.error("Failed to preload hedges:", err);
-            })
+            }),
         );
       }
 
@@ -185,7 +202,7 @@ export default function Home() {
             })
             .catch((err) => {
               console.error("Failed to preload risks:", err);
-            })
+            }),
         );
       }
 
@@ -206,7 +223,7 @@ export default function Home() {
             })
             .catch((err) => {
               console.error("Failed to preload news:", err);
-            })
+            }),
         );
       }
 
@@ -263,8 +280,17 @@ export default function Home() {
         <div className="max-w-[1400px] mx-auto px-6 py-4">
           <div className="flex items-center justify-center gap-6">
             {/* Logo */}
-            <div className="flex items-center gap-2">
-              <svg className="w-6 h-6 text-[#3fb950]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              onClick={() => setActiveTab("intro")}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <svg
+                className="w-6 h-6 text-[#3fb950]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
@@ -273,7 +299,7 @@ export default function Home() {
                 <span className="text-white">Trade</span>
                 <span className="text-[#3fb950]">Off</span>
               </h1>
-            </div>
+            </button>
           </div>
         </div>
       </header>
@@ -287,6 +313,9 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 py-6">
+        {activeTab === "intro" && (
+          <IntroPage onGetStarted={() => setActiveTab("portfolio")} />
+        )}
         {activeTab === "portfolio" && (
           <PortfolioView
             portfolio={portfolio}

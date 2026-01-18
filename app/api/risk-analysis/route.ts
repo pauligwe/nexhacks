@@ -7,7 +7,11 @@ import {
   getSeverityLevel,
   SeverityLevel,
 } from "@/lib/risk-factors";
-import { getWoodWideClient, PortfolioDataRow } from "@/lib/woodwide";
+import {
+  getWoodWideClient,
+  PortfolioDataRow,
+  WoodWideAnalysisResult,
+} from "@/lib/woodwide";
 
 interface PortfolioItem {
   ticker: string;
@@ -348,22 +352,16 @@ export async function POST(request: NextRequest) {
     // Generate summary
     const summary = generateSummary(alerts, stats);
 
-    // Wood Wide AI Integration - Anomaly Detection
-    let woodWideAnalysis: {
-      enabled: boolean;
-      anomalies?: {
-        ticker: string;
-        anomalyScore: number;
-        isAnomaly: boolean;
-        reason?: string;
-      }[];
-      error?: string;
-    } = { enabled: false };
+    // Wood Wide AI Integration - Full Portfolio Analysis
+    let woodWideAnalysis: WoodWideAnalysisResult = {
+      enabled: false,
+      insights: [],
+    };
 
     const woodWideClient = getWoodWideClient();
     if (woodWideClient && stats.holdings.length >= 3) {
       try {
-        console.log("[RiskAnalysis] Running Wood Wide anomaly detection...");
+        console.log("[RiskAnalysis] Running Wood Wide portfolio analysis...");
 
         // Prepare data for Wood Wide
         const portfolioData: PortfolioDataRow[] = stats.holdings.map((h) => ({
@@ -375,73 +373,94 @@ export async function POST(request: NextRequest) {
           industry: h.industry,
         }));
 
-        // Generate a session ID based on portfolio composition
-        const sessionId = `risk_${Date.now()}_${stats.holdings.length}`;
-
-        const result = await woodWideClient.analyzePortfolioAnomalies(
+        // Run comprehensive Wood Wide analysis
+        woodWideAnalysis = await woodWideClient.analyzePortfolio(
           portfolioData,
-          sessionId,
+          {
+            totalValue: stats.totalValue,
+            sectorWeights: stats.sectorWeights,
+            largestPosition: stats.largestPosition,
+          },
         );
 
-        // Map anomaly results back to tickers
-        const anomalyResults = result.anomalies.map((a, idx) => {
-          const holding = stats.holdings[idx];
-          return {
-            ticker: holding?.ticker || `Row ${a.row_index}`,
-            anomalyScore: a.anomaly_score,
-            isAnomaly: a.is_anomaly,
-            reason: a.is_anomaly
-              ? `Position size or weight is unusual compared to the rest of your portfolio`
-              : undefined,
-          };
-        });
-
-        woodWideAnalysis = {
-          enabled: true,
-          anomalies: anomalyResults.filter((a) => a.isAnomaly),
-        };
-
-        // Add Wood Wide anomalies as additional risk alerts
-        for (const anomaly of anomalyResults.filter((a) => a.isAnomaly)) {
-          const holding = stats.holdings.find(
-            (h) => h.ticker === anomaly.ticker,
-          );
-          if (holding) {
+        // Add Wood Wide insights as risk alerts
+        for (const insight of woodWideAnalysis.insights) {
+          if (insight.severity !== "info") {
             alerts.push({
               riskFactor: {
-                id: `woodwide_anomaly_${anomaly.ticker}`,
-                name: `Unusual Position: ${anomaly.ticker}`,
+                id: `woodwide_${insight.type}_${Date.now()}`,
+                name: insight.title,
                 category: "concentration",
-                description: `Wood Wide AI detected this position as statistically unusual`,
-                triggers: { tickers: [anomaly.ticker] },
+                description: insight.description,
+                triggers: {},
                 severityCalc: "exposure_pct",
                 thresholds: { low: 0, medium: 30, high: 50, critical: 70 },
-                impact:
-                  anomaly.reason ||
-                  "This position stands out from the rest of your portfolio pattern.",
+                impact: insight.description,
                 recommendation:
-                  "Review if this concentration is intentional. Consider if the position size aligns with your risk tolerance.",
-                hedgeKeywords: [anomaly.ticker.toLowerCase()],
+                  insight.recommendation || "Review this risk factor.",
+                hedgeKeywords: [],
               },
-              severity: anomaly.anomalyScore > 0.8 ? "high" : "medium",
-              severityScore: anomaly.anomalyScore * 100,
-              exposurePercent: holding.weight,
-              affectedTickers: [anomaly.ticker],
-              affectedValue: holding.value,
-              hedgeKeywords: [anomaly.ticker.toLowerCase()],
+              severity: insight.severity === "critical" ? "high" : "medium",
+              severityScore: insight.severity === "critical" ? 80 : 50,
+              exposurePercent: 0,
+              affectedTickers:
+                (insight.details.positions as { ticker: string }[])?.map(
+                  (p) => p.ticker,
+                ) || [],
+              affectedValue: 0,
+              hedgeKeywords: [],
             });
           }
         }
 
+        // Add anomaly-specific alerts
+        if (woodWideAnalysis.anomalies) {
+          for (const anomaly of woodWideAnalysis.anomalies.filter(
+            (a) => a.isAnomaly,
+          )) {
+            const holding = stats.holdings.find(
+              (h) => h.ticker === anomaly.ticker,
+            );
+            if (holding) {
+              alerts.push({
+                riskFactor: {
+                  id: `woodwide_anomaly_${anomaly.ticker}`,
+                  name: `Anomaly Detected: ${anomaly.ticker}`,
+                  category: "concentration",
+                  description: `Wood Wide AI flagged this position as unusual compared to typical portfolios`,
+                  triggers: { tickers: [anomaly.ticker] },
+                  severityCalc: "exposure_pct",
+                  thresholds: { low: 0, medium: 30, high: 50, critical: 70 },
+                  impact:
+                    anomaly.reason ||
+                    "This position deviates from typical investor behavior.",
+                  recommendation:
+                    "Verify this allocation is intentional and aligns with your strategy.",
+                  hedgeKeywords: [anomaly.ticker.toLowerCase()],
+                },
+                severity: anomaly.score > 0.8 ? "high" : "medium",
+                severityScore: anomaly.score * 100,
+                exposurePercent: holding.weight,
+                affectedTickers: [anomaly.ticker],
+                affectedValue: holding.value,
+                hedgeKeywords: [anomaly.ticker.toLowerCase()],
+              });
+            }
+          }
+        }
+
         console.log(
-          "[RiskAnalysis] Wood Wide found",
-          woodWideAnalysis.anomalies?.length || 0,
+          "[RiskAnalysis] Wood Wide analysis complete:",
+          woodWideAnalysis.insights.length,
+          "insights,",
+          woodWideAnalysis.anomalies?.filter((a) => a.isAnomaly).length || 0,
           "anomalies",
         );
       } catch (error) {
         console.error("[RiskAnalysis] Wood Wide error:", error);
         woodWideAnalysis = {
           enabled: true,
+          insights: [],
           error:
             error instanceof Error
               ? error.message

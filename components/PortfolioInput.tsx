@@ -156,7 +156,7 @@ export function PortfolioInput({
   const [ticker, setTicker] = useState("");
   const [shares, setShares] = useState("");
   const [importText, setImportText] = useState("");
-  const [showImport, setShowImport] = useState(false);
+  const [showImport, setShowImport] = useState(!compact);
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

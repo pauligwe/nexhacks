@@ -27,14 +27,31 @@ interface PortfolioStats {
   largestPosition: { ticker: string; weight: number };
 }
 
+interface WoodWideInsight {
+  type: "anomaly" | "classification" | "pattern" | "risk_profile";
+  title: string;
+  description: string;
+  severity: "info" | "warning" | "critical";
+  details: Record<string, unknown>;
+  recommendation?: string;
+}
+
 interface WoodWideAnalysis {
   enabled: boolean;
+  insights: WoodWideInsight[];
+  portfolioClassification?: {
+    profile: "conservative" | "moderate" | "aggressive" | "speculative";
+    confidence: number;
+    similarTo: string[];
+    warnings: string[];
+  };
   anomalies?: {
     ticker: string;
-    anomalyScore: number;
+    score: number;
     isAnomaly: boolean;
     reason?: string;
   }[];
+  riskScore?: number;
   error?: string;
 }
 
@@ -64,7 +81,9 @@ export function RiskView({
 }: RiskViewProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<RiskAnalysisResult | null>(preloadedResult || null);
+  const [result, setResult] = useState<RiskAnalysisResult | null>(
+    preloadedResult || null,
+  );
   const hasAutoAnalyzed = useRef(false);
 
   const handleAnalyze = async () => {
@@ -157,11 +176,11 @@ export function RiskView({
   // Count alerts by severity
   const alertCounts = result
     ? {
-      critical: result.alerts.filter((a) => a.severity === "critical").length,
-      high: result.alerts.filter((a) => a.severity === "high").length,
-      medium: result.alerts.filter((a) => a.severity === "medium").length,
-      low: result.alerts.filter((a) => a.severity === "low").length,
-    }
+        critical: result.alerts.filter((a) => a.severity === "critical").length,
+        high: result.alerts.filter((a) => a.severity === "high").length,
+        medium: result.alerts.filter((a) => a.severity === "medium").length,
+        low: result.alerts.filter((a) => a.severity === "low").length,
+      }
     : { critical: 0, high: 0, medium: 0, low: 0 };
 
   const getAssessmentIcon = (assessment: "better" | "worse" | "similar") => {
@@ -258,37 +277,167 @@ export function RiskView({
             {(alertCounts.critical > 0 ||
               alertCounts.high > 0 ||
               alertCounts.medium > 0) && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {alertCounts.critical > 0 && (
-                    <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-sm font-medium">
-                      {alertCounts.critical} Critical
-                    </span>
-                  )}
-                  {alertCounts.high > 0 && (
-                    <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 text-sm font-medium">
-                      {alertCounts.high} High
-                    </span>
-                  )}
-                  {alertCounts.medium > 0 && (
-                    <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium">
-                      {alertCounts.medium} Moderate
-                    </span>
-                  )}
-                  {alertCounts.low > 0 && (
-                    <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-medium">
-                      {alertCounts.low} Low
-                    </span>
-                  )}
+              <div className="flex flex-wrap gap-2 mt-4">
+                {alertCounts.critical > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-sm font-medium">
+                    {alertCounts.critical} Critical
+                  </span>
+                )}
+                {alertCounts.high > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 text-sm font-medium">
+                    {alertCounts.high} High
+                  </span>
+                )}
+                {alertCounts.medium > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium">
+                    {alertCounts.medium} Moderate
+                  </span>
+                )}
+                {alertCounts.low > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-medium">
+                    {alertCounts.low} Low
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Wood Wide AI Status */}
+            {result.woodWideAnalysis && (
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      result.woodWideAnalysis.error
+                        ? "bg-red-400"
+                        : result.woodWideAnalysis.enabled
+                          ? "bg-green-400"
+                          : "bg-gray-400"
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Powered by Wood Wide AI
+                    {result.woodWideAnalysis.riskScore !== undefined && (
+                      <>
+                        {" "}
+                        | Risk Score:{" "}
+                        <span
+                          className={
+                            result.woodWideAnalysis.riskScore > 70
+                              ? "text-red-400"
+                              : result.woodWideAnalysis.riskScore > 50
+                                ? "text-orange-400"
+                                : result.woodWideAnalysis.riskScore > 30
+                                  ? "text-yellow-400"
+                                  : "text-green-400"
+                          }
+                        >
+                          {result.woodWideAnalysis.riskScore}/100
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </div>
+                {result.woodWideAnalysis.error && (
+                  <p className="text-xs text-red-400 mt-1 ml-4">
+                    {result.woodWideAnalysis.error}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Wood Wide Portfolio Classification */}
+          {result.woodWideAnalysis?.portfolioClassification && (
+            <div
+              className={`border rounded-lg p-5 ${
+                result.woodWideAnalysis.portfolioClassification.profile ===
+                "speculative"
+                  ? "bg-red-500/10 border-red-500/30"
+                  : result.woodWideAnalysis.portfolioClassification.profile ===
+                      "aggressive"
+                    ? "bg-orange-500/10 border-orange-500/30"
+                    : result.woodWideAnalysis.portfolioClassification
+                          .profile === "moderate"
+                      ? "bg-yellow-500/10 border-yellow-500/30"
+                      : "bg-green-500/10 border-green-500/30"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-accent" />
+                  <h3 className="font-semibold">Wood Wide AI Classification</h3>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    result.woodWideAnalysis.portfolioClassification.profile ===
+                    "speculative"
+                      ? "bg-red-500/20 text-red-400"
+                      : result.woodWideAnalysis.portfolioClassification
+                            .profile === "aggressive"
+                        ? "bg-orange-500/20 text-orange-400"
+                        : result.woodWideAnalysis.portfolioClassification
+                              .profile === "moderate"
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : "bg-green-500/20 text-green-400"
+                  }`}
+                >
+                  {result.woodWideAnalysis.portfolioClassification.profile
+                    .charAt(0)
+                    .toUpperCase() +
+                    result.woodWideAnalysis.portfolioClassification.profile.slice(
+                      1,
+                    )}
+                </span>
+              </div>
+
+              <p className="text-sm text-muted-foreground mb-3">
+                Your portfolio matches a{" "}
+                <strong>
+                  {result.woodWideAnalysis.portfolioClassification.profile}
+                </strong>{" "}
+                investment profile with{" "}
+                <strong>
+                  {result.woodWideAnalysis.portfolioClassification.confidence}%
+                </strong>{" "}
+                confidence.
+              </p>
+
+              {result.woodWideAnalysis.portfolioClassification.similarTo
+                .length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                    Similar to
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {result.woodWideAnalysis.portfolioClassification.similarTo.map(
+                      (profile) => (
+                        <span
+                          key={profile}
+                          className="px-2 py-0.5 bg-secondary/50 rounded text-xs"
+                        >
+                          {profile.replace(/_/g, " ")}
+                        </span>
+                      ),
+                    )}
+                  </div>
                 </div>
               )}
 
-            {/* Wood Wide AI Branding */}
-            <div className="mt-4 pt-4 border-t border-border/50">
-              <span className="text-xs text-muted-foreground">
-                Powered by Wood Wide AI
-              </span>
+              {result.woodWideAnalysis.portfolioClassification.warnings.length >
+                0 && (
+                <div className="space-y-1">
+                  {result.woodWideAnalysis.portfolioClassification.warnings.map(
+                    (warning, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm">
+                        <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                        <span className="text-foreground/90">{warning}</span>
+                      </div>
+                    ),
+                  )}
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Benchmark Comparison */}
           <div className="bg-card border border-border rounded-lg p-5">
