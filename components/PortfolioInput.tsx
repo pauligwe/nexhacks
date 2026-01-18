@@ -16,28 +16,35 @@ function generateUserId(): string {
   return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-const DEMO_PORTFOLIOS = {
-  tech: [
-    { ticker: "NVDA", shares: 50 },
-    { ticker: "MSFT", shares: 30 },
-    { ticker: "GOOGL", shares: 20 },
-    { ticker: "TSLA", shares: 25 },
-    { ticker: "META", shares: 15 },
-  ],
-  crypto: [
-    { ticker: "COIN", shares: 40 },
-    { ticker: "MSTR", shares: 20 },
-    { ticker: "SQ", shares: 35 },
-    { ticker: "PYPL", shares: 30 },
-  ],
-  diversified: [
-    { ticker: "AAPL", shares: 50 },
-    { ticker: "JPM", shares: 25 },
-    { ticker: "XOM", shares: 30 },
-    { ticker: "JNJ", shares: 20 },
-    { ticker: "NVDA", shares: 15 },
-  ],
-};
+// Sample portfolio loaded from assets/portfolio.csv
+const SAMPLE_PORTFOLIO = [
+  { ticker: "AAPL", shares: 1 },
+  { ticker: "AGCO", shares: 1 },
+  { ticker: "BA", shares: 2 },
+  { ticker: "BG", shares: 4 },
+  { ticker: "CALM", shares: 5 },
+  { ticker: "CAT", shares: 1 },
+  { ticker: "CSCO", shares: 5 },
+  { ticker: "CVX", shares: 2 },
+  { ticker: "DDOG", shares: 5 },
+  { ticker: "DE", shares: 4 },
+  { ticker: "GRWG", shares: 2 },
+  { ticker: "HUM", shares: 1 },
+  { ticker: "IBKR", shares: 1 },
+  { ticker: "IEX", shares: 5 },
+  { ticker: "JPM", shares: 5 },
+  { ticker: "KO", shares: 5 },
+  { ticker: "LMT", shares: 5 },
+  { ticker: "MS", shares: 1 },
+  { ticker: "MSCI", shares: 1 },
+  { ticker: "MSFT", shares: 3 },
+  { ticker: "NFLX", shares: 1 },
+  { ticker: "OSK", shares: 3 },
+  { ticker: "PFE", shares: 2 },
+  { ticker: "PG", shares: 2 },
+  { ticker: "SPY", shares: 3 },
+  { ticker: "TMUS", shares: 5 },
+];
 
 // Common column names for ticker/symbol
 const TICKER_COLUMNS = [
@@ -131,8 +138,8 @@ function parsePortfolioData(text: string): PortfolioItem[] {
       !isNaN(shares) &&
       shares > 0
     ) {
-      // Round shares to whole number
-      items.push({ ticker, shares: Math.round(shares) });
+      // Keep fractional shares for accurate value calculations
+      items.push({ ticker, shares });
     }
   }
 
@@ -307,7 +314,7 @@ export function PortfolioInput({
     if (!ticker.trim() || !shares.trim()) return;
 
     const tickerUpper = ticker.trim().toUpperCase();
-    const sharesNum = parseInt(shares, 10);
+    const sharesNum = parseFloat(shares);
 
     if (isNaN(sharesNum) || sharesNum <= 0) return;
 
@@ -336,8 +343,8 @@ export function PortfolioInput({
     }
   };
 
-  const loadDemo = (type: keyof typeof DEMO_PORTFOLIOS) => {
-    setPortfolio(DEMO_PORTFOLIOS[type]);
+  const loadSamplePortfolio = () => {
+    setPortfolio(SAMPLE_PORTFOLIO);
   };
 
   const handleImport = () => {
@@ -534,29 +541,17 @@ MSFT, 30`}
           {/* Divider */}
           <div className="flex items-center gap-4">
             <div className="flex-1 h-px bg-[#2d3139]" />
-            <span className="text-xs text-[#858687]">or try a demo</span>
+            <span className="text-xs text-[#858687]">or use sample data</span>
             <div className="flex-1 h-px bg-[#2d3139]" />
           </div>
 
-          {/* Demo Portfolios */}
+          {/* Sample Portfolio */}
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => loadDemo("tech")}
+              onClick={loadSamplePortfolio}
               className="px-4 py-2 border border-[#2d3139] text-sm hover:border-[#3fb950] transition-colors"
             >
-              Tech Heavy
-            </button>
-            <button
-              onClick={() => loadDemo("crypto")}
-              className="px-4 py-2 border border-[#2d3139] text-sm hover:border-[#3fb950] transition-colors"
-            >
-              Crypto Exposure
-            </button>
-            <button
-              onClick={() => loadDemo("diversified")}
-              className="px-4 py-2 border border-[#2d3139] text-sm hover:border-[#3fb950] transition-colors"
-            >
-              Diversified
+              Load Sample Portfolio
             </button>
             <button
               onClick={() => setShowImport(!showImport)}
