@@ -340,18 +340,6 @@ export default function Home() {
           />
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-[#2d3139] py-4 px-4 mt-auto">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between text-xs text-[#858687]">
-          <span>Built for NexHacks 2026 · Powered by Polymarket, Groq & Wood Wide AI</span>
-          <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-white">Privacy</a>
-            <a href="#" className="hover:text-white">Terms</a>
-            <a href="#" className="hover:text-white">Docs</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
