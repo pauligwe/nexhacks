@@ -94,8 +94,20 @@ export interface RiskAnalysisResult {
   analysisTimestamp: string;
 }
 
+// Check if this is a brokerage callback on initial load
+function getInitialPage(): PageType {
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    const isCallback = params.get("brokerage_callback") === "true";
+    if (isCallback) {
+      return "portfolio";
+    }
+  }
+  return "intro";
+}
+
 export default function Home() {
-  const [activePage, setActivePage] = useState<PageType>("intro");
+  const [activePage, setActivePage] = useState<PageType>(getInitialPage);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [stockInfo, setStockInfo] = useState<Record<string, StockInfo>>({});
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
