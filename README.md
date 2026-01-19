@@ -1,10 +1,11 @@
-# Polymarket Terminal
-
+# TradeOff
 > **Built for NexHacks 2026** | Powered by Polymarket, Groq & Wood Wide AI
+
+https://github.com/user-attachments/assets/416009f3-9cdd-49d1-841f-b715a6f0a7ef
 
 An advanced prediction market analytics platform that helps investors hedge their stock portfolios using Polymarket prediction markets. The system uses **Wood Wide AI** for numeric reasoning and risk analysis to identify portfolio vulnerabilities and recommend actionable hedges.
 
-## 🎯 Project Overview
+## Overview
 
 Polymarket Terminal demonstrates a complete **numeric decision workflow** using Wood Wide AI:
 
@@ -12,7 +13,7 @@ Polymarket Terminal demonstrates a complete **numeric decision workflow** using 
 2. **Why does it matter?** → Wood Wide AI classifies portfolio profiles and calculates numeric risk scores
 3. **What should happen next?** → Actionable hedge recommendations via Polymarket prediction markets
 
-## 🏆 Hackathon Tracks
+## Hackathon Tracks
 
 ### Primary: Polymarket
 - Fetches real-time prediction market data from Polymarket's Gamma API
@@ -64,7 +65,7 @@ const anomalies = await woodWideClient.detectAnomalies(model.id, dataset.id);
 const insights = generateInsights(anomalies, classification);
 ```
 
-## 🚀 Features
+## Features
 
 - **Portfolio Management**: Add stocks, view real-time prices, track positions
 - **Risk Analysis**: Comprehensive risk assessment powered by Wood Wide AI
@@ -76,7 +77,7 @@ const insights = generateInsights(anomalies, classification);
 - **News Integration**: Relevant news articles for selected prediction markets
 - **Greeks Analysis**: Portfolio sensitivity metrics and hedge effectiveness
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Frontend**: Next.js 15, React, TypeScript, TailwindCSS
 - **AI/ML**: 
@@ -123,15 +124,15 @@ npm run dev
 5. **Open the app**:
 Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 🎮 Usage
+## Usage
 
-1. **Build Your Portfolio**: Add stocks with ticker symbols and share counts
+1. **Build Your Portfolio**: Sign into you're brokerage account or upload csv file
 2. **Analyze Risks**: View Wood Wide AI's risk analysis and portfolio classification
 3. **Find Hedges**: Get AI-recommended Polymarket bets that hedge your specific risks
 4. **Track News**: Stay informed about events affecting your hedges
 5. **Monitor Greeks**: Understand your portfolio's sensitivity to market changes
 
-## 🧪 Wood Wide AI Examples
+## Wood Wide AI Examples
 
 ### Portfolio Classification
 ```
@@ -163,7 +164,7 @@ User Portfolio → Wood Wide AI Analysis → Risk Identification → Polymarket 
                   [Risk Scores]            [Patterns]           [Probabilities]
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 - `/app` - Next.js app router pages and API routes
 - `/components` - React components for UI
@@ -177,24 +178,11 @@ User Portfolio → Wood Wide AI Analysis → Risk Identification → Polymarket 
   - `/risk-analysis` - Portfolio risk assessment
   - `/stocks` - Stock data fetching
 
-## 🎯 Wood Wide Decision Criteria
-
-The app addresses Wood Wide's evaluation criteria:
-
-✅ **What happened?** - Clear risk identification with numeric metrics  
-✅ **Why does it matter?** - Interpretable insights tied to real portfolio impacts  
-✅ **What should happen next?** - Specific, actionable hedge recommendations  
-
-✅ **Realistic structured data** - Real stock portfolios and market data  
-✅ **Real decision support** - Actual hedging decisions, not just visualizations  
-✅ **Multiple numeric insights** - Classification + anomaly detection + risk scoring  
-✅ **Interpretable outputs** - Clear explanations and confidence scores  
-
-## 📝 License
+## License
 
 MIT
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Polymarket** for prediction market data and infrastructure
 - **Wood Wide AI** for numeric reasoning and anomaly detection capabilities
