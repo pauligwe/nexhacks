@@ -1,99 +1,75 @@
 # TradeOff
+
 > **Built for NexHacks 2026** | Powered by Polymarket, Groq & Wood Wide AI
 
 https://github.com/user-attachments/assets/416009f3-9cdd-49d1-841f-b715a6f0a7ef
 
-An advanced prediction market analytics platform that helps investors hedge their stock portfolios using Polymarket prediction markets. The system uses **Wood Wide AI** for numeric reasoning and risk analysis to identify portfolio vulnerabilities and recommend actionable hedges.
+A portfolio hedging platform that connects your stock investments with Polymarket prediction markets. TradeOff analyzes your portfolio risks and recommends actionable hedges using real prediction market data.
 
-## Overview
+## What It Does
 
-Polymarket Terminal demonstrates a complete **numeric decision workflow** using Wood Wide AI:
+TradeOff helps investors protect their portfolios by:
 
-1. **What happened?** → Portfolio risk analysis identifies concentration risks, sector exposures, and anomalies
-2. **Why does it matter?** → Wood Wide AI classifies portfolio profiles and calculates numeric risk scores
-3. **What should happen next?** → Actionable hedge recommendations via Polymarket prediction markets
-
-## Hackathon Tracks
-
-### Primary: Polymarket
-- Fetches real-time prediction market data from Polymarket's Gamma API
-- Matches portfolio risks to relevant prediction markets
-- Provides direct links to hedge positions on Polymarket
-
-### Secondary: Wood Wide AI
-- **Portfolio Classification**: Uses Wood Wide's numeric reasoning to classify portfolios (conservative, moderate, aggressive, speculative)
-- **Anomaly Detection**: Identifies unusual positions that deviate from typical investor patterns
-- **Risk Scoring**: Calculates interpretable risk scores (1-100) based on concentration, sector exposure, and position sizing
-- **Pattern Analysis**: Detects risky portfolio patterns using structured data analysis
-
-## 🧠 Wood Wide AI Integration
-
-### Numeric Decision Workflow
-
-The app implements Wood Wide's core principles:
-
-**Structured Data Input**:
-- Portfolio holdings (ticker, shares, value, weight)
-- Sector concentrations
-- Position sizes
-- Historical patterns from reference portfolios
-
-**Numeric Reasoning**:
-- Classification model trained on reference portfolio data
-- Anomaly detection comparing user portfolios to typical patterns
-- Risk score calculation using multiple numeric factors
-
-**Actionable Outputs**:
-- Portfolio profile classification with confidence scores
-- Specific anomaly alerts for unusual positions
-- Numeric risk scores with clear thresholds
-- Hedge recommendations tied to specific risks
-
-### Wood Wide API Workflow
-
-```typescript
-// 1. Upload portfolio data as structured CSV
-const dataset = await woodWideClient.uploadDatasetCSV(portfolioData);
-
-// 2. Train/use anomaly detection model
-const model = await woodWideClient.trainAnomalyModel(dataset.id);
-
-// 3. Run inference to detect anomalies
-const anomalies = await woodWideClient.detectAnomalies(model.id, dataset.id);
-
-// 4. Generate interpretable insights
-const insights = generateInsights(anomalies, classification);
-```
+1. **Importing your portfolio** via brokerage connection (SnapTrade), CSV upload, or manual entry
+2. **Analyzing risk exposures** including sector concentration, position sizing, and diversification
+3. **Recommending hedges** from active Polymarket prediction markets that offset your specific risks
+4. **Tracking relevant news** that could impact your hedges
+5. **Visualizing payoff scenarios** with Greeks analysis and P&L projections
 
 ## Features
 
-- **Portfolio Management**: Add stocks, view real-time prices, track positions
-- **Risk Analysis**: Comprehensive risk assessment powered by Wood Wide AI
-  - Concentration risk detection
-  - Sector exposure analysis
-  - Anomaly detection for unusual positions
-  - Benchmark comparisons to typical portfolios
-- **Hedge Recommendations**: AI-powered suggestions for Polymarket bets that hedge portfolio risks
-- **News Integration**: Relevant news articles for selected prediction markets
-- **Greeks Analysis**: Portfolio sensitivity metrics and hedge effectiveness
+### Portfolio Management
+- **Brokerage Integration**: Connect Wealthsimple, Questrade, or other brokerages via SnapTrade
+- **CSV Import**: Upload portfolio exports from any platform
+- **Manual Entry**: Add individual positions with ticker and share count
+- **Real-time Pricing**: Live stock prices and sector classification from Yahoo Finance
 
-## Technology Stack
+### Risk Analysis
+- Sector concentration breakdown with pie chart visualization
+- Top holdings by portfolio weight
+- Position sizing alerts for overweight stocks
+- Diversification scoring compared to typical portfolios
+- Unknown sector filtering to avoid false risk signals
 
-- **Frontend**: Next.js 15, React, TypeScript, TailwindCSS
-- **AI/ML**: 
-  - Wood Wide AI (numeric reasoning, anomaly detection, classification)
-  - Groq (LLM analysis via Grok-2)
-- **Data Sources**:
-  - Polymarket Gamma API (prediction markets)
-  - Yahoo Finance (stock data)
-  - News API (market news)
-- **Compression**: Token.company Bear1 (context compression)
+### Hedge Recommendations
+- AI-powered matching of portfolio risks to Polymarket events
+- Confidence scoring (high/medium) for each recommendation
+- Direct links to place hedges on Polymarket
+- Affected stocks highlighted for each hedge
+- Only shows unresolved, active prediction markets
 
-## 📦 Setup
+### Wood Wide AI Integration
+- Historical correlation analysis between market events and stock performance
+- Semantic matching to find similar past scenarios
+- Confidence boosts based on historical accuracy
+- Pattern recognition across market conditions
+
+### News Feed
+- Relevant news articles for your portfolio and hedges
+- Filter by individual stock tickers
+- Only shows filters for stocks with available articles
+
+### Greeks Analysis
+- Payoff curves for selected hedges
+- P&L scenario analysis at different probability levels
+- Recommended position sizing based on portfolio exposure
+
+## Tech Stack
+
+- **Framework**: Next.js 16, React 19, TypeScript
+- **Styling**: TailwindCSS 4
+- **Charts**: Recharts
+- **Brokerage**: SnapTrade SDK
+- **Stock Data**: Yahoo Finance
+- **AI**: Groq (Grok-2 for analysis)
+- **Prediction Markets**: Polymarket Gamma API
+- **Historical Analysis**: Wood Wide AI
+
+## Setup
 
 1. **Clone the repository**:
 ```bash
-git clone (https://github.com/pauligwe/TradeOff)
+git clone https://github.com/pauligwe/TradeOff
 cd nexhacks
 ```
 
@@ -104,16 +80,19 @@ npm install
 
 3. **Configure environment variables**:
 
-Create a `.env.local` file with:
+Create a `.env.local` file:
 
 ```bash
 # Required
-GROQ_API_KEY=your_groq_api_key_here
+GROQ_API_KEY=your_groq_api_key
 
-# Optional (for enhanced features)
-WOOD_WIDE_API_KEY=your_wood_wide_api_key_here
-TOKEN_COMPANY_API_KEY=your_token_company_api_key_here
-NEWS_API_KEY=your_news_api_key_here
+# Brokerage Integration (SnapTrade)
+SNAPTRADE_CLIENT_ID=your_snaptrade_client_id
+SNAPTRADE_CONSUMER_KEY=your_snaptrade_consumer_key
+
+# Optional
+NEWS_API_KEY=your_news_api_key
+WOOD_WIDE_API_KEY=your_wood_wide_api_key
 ```
 
 4. **Run the development server**:
@@ -121,62 +100,46 @@ NEWS_API_KEY=your_news_api_key_here
 npm run dev
 ```
 
-5. **Open the app**:
-Navigate to [http://localhost:3000](http://localhost:3000)
+5. **Open the app**: [http://localhost:3000](http://localhost:3000)
+
+## Project Structure
+
+```
+/app
+  /api
+    /analyze          - Hedge recommendation engine
+    /brokerage        - SnapTrade integration endpoints
+    /correlation      - Wood Wide AI historical analysis
+    /markets          - Polymarket data fetching
+    /news             - News article aggregation
+    /risk-analysis    - Portfolio risk assessment
+    /stocks           - Stock data from Yahoo Finance
+  page.tsx            - Main app with tab navigation
+
+/components
+  /portfolio          - Portfolio view and charts
+  /hedge              - Hedge recommendations display
+  /risk               - Risk analysis cards
+  /greeks             - Payoff curves and scenarios
+  /news               - News feed with filters
+  Sidebar.tsx         - Navigation sidebar
+  PortfolioInput.tsx  - Stock entry and import
+
+/lib
+  polymarket.ts       - Polymarket API client
+  grok.ts             - Groq LLM integration
+  stocks.ts           - Yahoo Finance wrapper
+```
 
 ## Usage
 
-1. **Build Your Portfolio**: Sign into you're brokerage account or upload csv file
-2. **Analyze Risks**: View Wood Wide AI's risk analysis and portfolio classification
-3. **Find Hedges**: Get AI-recommended Polymarket bets that hedge your specific risks
-4. **Track News**: Stay informed about events affecting your hedges
-5. **Monitor Greeks**: Understand your portfolio's sensitivity to market changes
-
-## Wood Wide AI Examples
-
-### Portfolio Classification
-```
-Input: Portfolio with 80% tech stocks, 3 holdings
-Output: "Speculative" profile (92% confidence)
-Insight: "High concentration risk - similar to portfolios that saw 50%+ drawdowns"
-```
-
-### Anomaly Detection
-```
-Input: Portfolio with one 45% position
-Output: Anomaly detected on NVDA (score: 0.87)
-Insight: "Position size exceeds typical institutional limits of 10-15%"
-```
-
-### Risk Scoring
-```
-Input: Diversified 20-stock portfolio
-Output: Risk Score: 42/100
-Insight: "Moderate risk - tech exposure and concentration within normal ranges"
-```
-
-## 📊 Data Flow
-
-```
-User Portfolio → Wood Wide AI Analysis → Risk Identification → Polymarket Matching → Hedge Recommendations
-     ↓                    ↓                      ↓                     ↓                    ↓
-  [Stocks]        [Classification]         [Anomalies]          [Events]            [Actionable Bets]
-                  [Risk Scores]            [Patterns]           [Probabilities]
-```
-
-## Architecture
-
-- `/app` - Next.js app router pages and API routes
-- `/components` - React components for UI
-- `/lib` - Core business logic
-  - `woodwide.ts` - Wood Wide AI client and analysis
-  - `polymarket.ts` - Polymarket API integration
-  - `risk-factors.ts` - Risk detection rules
-  - `grok.ts` - LLM analysis
-- `/app/api` - Backend API endpoints
-  - `/analyze` - Hedge recommendation engine
-  - `/risk-analysis` - Portfolio risk assessment
-  - `/stocks` - Stock data fetching
+1. **Get Started**: Click "Get Started" on the intro screen
+2. **Add Portfolio**: Connect your brokerage, upload CSV, or manually add stocks
+3. **Analyze**: Click "Analyze Portfolio" to generate hedge recommendations
+4. **Review Hedges**: Browse recommended Polymarket positions sorted by relevance
+5. **Check Risks**: View sector breakdown and risk alerts
+6. **Read News**: Stay informed about events affecting your hedges
+7. **Explore Greeks**: Analyze payoff scenarios for selected hedges
 
 ## License
 
@@ -185,6 +148,6 @@ MIT
 ## Acknowledgments
 
 - **Polymarket** for prediction market data and infrastructure
-- **Wood Wide AI** for numeric reasoning and anomaly detection capabilities
+- **Wood Wide AI** for historical correlation analysis
 - **Groq** for fast LLM inference
-- **NexHacks 2026** for the hackathon opportunity
+- **SnapTrade** for brokerage connectivity
